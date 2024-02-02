@@ -4,7 +4,7 @@ import {
     createBackendPlugin,
   } from '@backstage/backend-plugin-api';
 import { createRouter } from './service/router';
-import { loggerToWinstonLogger } from '@backstage/backend-common';
+import { cacheToPluginCacheManager, loggerToWinstonLogger } from '@backstage/backend-common';
   
 export const mtaPlugin = createBackendPlugin({
     pluginId: 'mta',
@@ -15,21 +15,25 @@ export const mtaPlugin = createBackendPlugin({
             http: coreServices.httpRouter,
             config: coreServices.rootConfig,
             database: coreServices.database,
+            identity: coreServices.identity,
+            cache: coreServices.cache
         },
-        async init({ logger, http, config, database }) {
+        async init({ logger, http, config, database, identity, cache }) {
           logger.info('Hello from example plugin');
           const winstonLogger = loggerToWinstonLogger(logger)
 
           winstonLogger.info("Url:" + config.getString('mta.url'))
 
-          const client = await database.getClient()
-
-
+          const pluginCacheManager = cacheToPluginCacheManager(cache)
+          
           http.use(await createRouter({
             logger: winstonLogger,
-            url: config.getString('mta.url'),
-            client: client,
+            cache: pluginCacheManager,
+            database,
+            config,
+            identity,
           }))
+
         },
       });
     },
