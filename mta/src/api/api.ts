@@ -38,13 +38,19 @@ export class DefaultMtaApi implements MTAApi {
     async getApplications(): Promise<Application[] | URL > {
         const url = await this.discoveryApi.getBaseUrl('mta')
         const {token: idToken } = await this.identityApi.getCredentials();
+        const ref = window.location.href
+        console.log(ref)
         
+
         const response = await fetch(url+"/applications", {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 ...(idToken && { Authorization: `Bearer ${idToken}` }),
+
             },
+            //referrer: window.location.href,
+            referrerPolicy: 'no-referrer-when-downgrade',
             redirect: 'error',
         });
         const j =  await response.json()

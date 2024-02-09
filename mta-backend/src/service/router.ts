@@ -73,7 +73,10 @@ export async function createRouter(
     let id: string = backstageID?.identity.userEntityRef ?? "undefined"
     
     const u = new URL(backstageBaseURL+"/api/mta/cb/"+id)
-    // u.searchParams.set("continueTo", request.originalUrl)
+    const org  = request.headers.referer
+    
+    logger.info("here2: " + org)
+    u.searchParams.set("continueTo", request.headers.referer?? fronteEndBaseURL)
     logger.info("here" + u.toString())
     
     let accessToken = await cacheClient.get(String(id))
@@ -126,11 +129,11 @@ export async function createRouter(
     logger.info('PONG!')
     const user = request.params.username
     logger.info("user in callback:" +  user)
-    // const continueTo = request.query.continueTo
+    const continueTo = request.query.continueTo
     const u = new URL(backstageBaseURL+"/api/mta/cb/"+user)
-    // if (continueTo) {
-    //   u.searchParams.set("continueTo", continueTo.toString() )
-    // }
+    if (continueTo) {
+      u.searchParams.set("continueTo", continueTo.toString() )
+    }
     logger.info("in callback" + u.toString())
     const params = authClient.callbackParams(request);
     const tokenSet = await authClient.callback(u.toString(), params, { code_verifier });
@@ -145,8 +148,9 @@ export async function createRouter(
     // Default expire to 1min
     cacheClient.set(user, tokenSet.access_token, {ttl: tokenSet.expires_in ?? 60 * 1000})
     const out = oauthMappingStorage.saveRefreshTokenForUser(user, tokenSet.refresh_token)
+    response.redirect(continueTo?.toString() ?? fronteEndBaseURL)
+    return
 
-    return 
   })
 
   router.get('/applications', async(request, response) => {

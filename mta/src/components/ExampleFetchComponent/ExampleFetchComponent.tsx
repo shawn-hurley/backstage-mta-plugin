@@ -62,7 +62,7 @@ type loginPageProps = {
 export const LoginToMTACard = ({ url }: loginPageProps) => {
   return <Grid item>
           <InfoCard title="Please Login">
-            <Button target='_blank' variant='outlined' color='primary' size='large' href={url.toString()}>Login To MTA</Button>
+            <Button variant='outlined' color='primary' size='large' href={url.toString()}>Login To MTA</Button>
           </InfoCard>
         </Grid>
 
