@@ -47,7 +47,7 @@ export class DataBaseEntityApplicationStoraage implements EntityApplicationStora
 
 export interface OAuthBackstageIDMapping {
     // String of success or not??? 
-    saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<String | undefined>
+    saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<Boolean| undefined>
     getRefreshTokenForUser(backstageID: string): Promise<String | undefined>
 }
 export class OAuthBackstageIDMappingStorage implements OAuthBackstageIDMapping{
@@ -68,12 +68,32 @@ export class OAuthBackstageIDMappingStorage implements OAuthBackstageIDMapping{
         return new OAuthBackstageIDMappingStorage(knex, logger)
       }
 
-    async saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<string | undefined> {
+    async saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<Boolean| undefined> {
         if (!backstageID || !refreshToken) {
             return undefined;
         }
+        const r= await this.getRefreshTokenForUser(backstageID)
 
-        return this.knex.insert({"backstageID": backstageID, "mtaOAuthRefreshToken": refreshToken}).into(OAUTH_MAPPING_TABLE);
+        if (r && r != refreshToken) {
+            const res = await this.knex.table(OAUTH_MAPPING_TABLE).update({"mtaOAuthRefreshToken": refreshToken}).where('backstageID', backstageID)
+                .then((data) => {
+                    if (data === 1) {
+                        return true;
+                    }
+                    return false;
+                }
+            );
+            return res 
+        }
+
+        const res = this.knex.insert({"backstageID": backstageID, "mtaOAuthRefreshToken": refreshToken}).into(OAUTH_MAPPING_TABLE)
+            .then((data) => {
+                if (data.length === 1) {
+                    return true
+                }
+                return false;
+            });
+        return res
     }
 
     async getRefreshTokenForUser(backstageID: string): Promise<String | undefined> {

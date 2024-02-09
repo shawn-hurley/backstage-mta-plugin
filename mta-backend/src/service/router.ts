@@ -33,6 +33,7 @@ export async function createRouter(
   // If a user wants to just make a long lived token to always use to MTA auth
   const mtaToken = config.getOptional('mta.token')
 
+  const fronteEndBaseURL = config.getString('app.baseUrl')
   const backstageBaseURL = config.getString('backend.baseUrl')
   const baseUrl = config.getString('mta.url');
   const baseURLHub = baseUrl+"/hub"
@@ -70,21 +71,20 @@ export async function createRouter(
 
     const backstageID = await identity.getIdentity( { request })
     let id: string = backstageID?.identity.userEntityRef ?? "undefined"
-    // if (backstageID) {
-    //   logger.info("id found, setting auth for the backstage user")
-    //   id = backstageID.identity.userEntityRef
-    // }
+    
+    const u = new URL(backstageBaseURL+"/api/mta/cb/"+id)
+    // u.searchParams.set("continueTo", request.originalUrl)
+    logger.info("here" + u.toString())
+    
     let accessToken = await cacheClient.get(String(id))
     const refreshToken = await oauthMappingStorage.getRefreshTokenForUser(String(id))
-    logger.info("refreshToken: " + refreshToken)
     
     if (!accessToken && !refreshToken) {
       const authorizationURL = authClient.authorizationUrl({
-        redirect_uri: backstageBaseURL+"/api/mta/cb/"+id,
+        redirect_uri: u.toString(),
         code_challenge,
         code_challenge_method: 'S256',
       })
-      logger.info("login_url: " + authorizationURL)
       response.statusCode = 401;
       response.json({"loginURL": authorizationURL})
       return
@@ -93,11 +93,10 @@ export async function createRouter(
       const tokenSet = await authClient.refresh(String(refreshToken))
       if (!tokenSet || !tokenSet.access_token) {
         const authorizationURL = authClient.authorizationUrl({
-          redirect_uri: backstageBaseURL+"/api/mta/cb/"+id,
+          redirect_uri: u.toString(),
           code_challenge,
           code_challenge_method: 'S256',
         })
-        logger.info("login_url: " + authorizationURL)
       response.statusCode = 401;
       response.json({"loginURL": authorizationURL})
         return
@@ -105,9 +104,9 @@ export async function createRouter(
       logger.info("refreshed token")
       accessToken = String(tokenSet.access_token)
       cacheClient.set(String(id), String(tokenSet.access_token), {ttl: tokenSet.expires_in?? 60 * 1000})
-      if (tokenSet.refresh_token != refreshToken) {
+      if (tokenSet.refresh_token && tokenSet.refresh_token != refreshToken) {
         //if updated, then we should update the database
-        logger.info("TODO: UPDATE REFRESH TOKEN")
+        oauthMappingStorage.saveRefreshTokenForUser(String(id), tokenSet.refresh_token)
       }
     }
     
@@ -126,11 +125,16 @@ export async function createRouter(
   router.get('/cb/:username', async (request, response) => {
     logger.info('PONG!')
     const user = request.params.username
+    logger.info("user in callback:" +  user)
+    // const continueTo = request.query.continueTo
+    const u = new URL(backstageBaseURL+"/api/mta/cb/"+user)
+    // if (continueTo) {
+    //   u.searchParams.set("continueTo", continueTo.toString() )
+    // }
+    logger.info("in callback" + u.toString())
     const params = authClient.callbackParams(request);
-    const tokenSet = await authClient.callback(backstageBaseURL+"/api/mta/cb/"+user, params, { code_verifier });
+    const tokenSet = await authClient.callback(u.toString(), params, { code_verifier });
     // Store the tokenSet in the cache
-    logger.log('received and validated tokens %j', tokenSet);
-    logger.log('validated ID Token claims %j', tokenSet.claims());
 
     if (!tokenSet.access_token || !tokenSet.refresh_token) {
       response.status(401)
@@ -138,14 +142,11 @@ export async function createRouter(
       return
     }
 
-    // Add timeout
-    logger.info("got expires in: " +tokenSet.expires_in)
     // Default expire to 1min
     cacheClient.set(user, tokenSet.access_token, {ttl: tokenSet.expires_in ?? 60 * 1000})
     const out = oauthMappingStorage.saveRefreshTokenForUser(user, tokenSet.refresh_token)
 
-    // Eventually this should redirect back the enitity page
-    response.json({})
+    return 
   })
 
   router.get('/applications', async(request, response) => {

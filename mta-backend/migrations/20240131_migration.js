@@ -6,13 +6,11 @@
  */
 exports.up = async function up(knex) {
     await knex.schema.createTable('oauth-mapping', table => {
-      table.increments('id').primary();
-      table.string('backstageID');
+      table.string('backstageID').primary();
       table.string('mtaOAuthRefreshToken');
     });
     await knex.schema.createTable('entity-application-mapping', table => {
-      table.increments('id').primary();
-      table.string('entityUID');
+      table.string('entityUID').primary();
       table.string('mtaApplication');
     })
   };
