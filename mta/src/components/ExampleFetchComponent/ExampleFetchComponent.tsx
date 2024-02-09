@@ -1,304 +1,104 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Table, TableColumn, Progress, ResponseErrorPanel } from '@backstage/core-components';
+import { Typography, Grid, Button } from '@material-ui/core';
+import { Table, TableColumn, Progress, ResponseErrorPanel, InfoCard,  } from '@backstage/core-components';
 import useAsync from 'react-use/lib/useAsync';
+import { useApi } from '@backstage/core-plugin-api';
+import {mtaApiRef, Application, MTAApi} from '../../api/api.ts';
+import AddLinkIcon from '@mui/icons-material/AddLink';
 
-export const exampleUsers = {
-  "results": [
-    {
-      "gender": "female",
-      "name": {
-        "title": "Miss",
-        "first": "Carolyn",
-        "last": "Moore"
-      },
-      "email": "carolyn.moore@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Carolyn",
-      "nat": "GB"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Esma",
-        "last": "Berberoğlu"
-      },
-      "email": "esma.berberoglu@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Esma",
-      "nat": "TR"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Isabella",
-        "last": "Rhodes"
-      },
-      "email": "isabella.rhodes@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Isabella",
-      "nat": "GB"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Derrick",
-        "last": "Carter"
-      },
-      "email": "derrick.carter@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Derrick",
-      "nat": "IE"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Miss",
-        "first": "Mattie",
-        "last": "Lambert"
-      },
-      "email": "mattie.lambert@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Mattie",
-      "nat": "AU"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Mijat",
-        "last": "Rakić"
-      },
-      "email": "mijat.rakic@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Mijat",
-      "nat": "RS"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Javier",
-        "last": "Reid"
-      },
-      "email": "javier.reid@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Javier",
-      "nat": "US"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Isabella",
-        "last": "Li"
-      },
-      "email": "isabella.li@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Isabella",
-      "nat": "CA"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Mrs",
-        "first": "Stephanie",
-        "last": "Garrett"
-      },
-      "email": "stephanie.garrett@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Stephanie",
-      "nat": "AU"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Antonia",
-        "last": "Núñez"
-      },
-      "email": "antonia.nunez@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Antonia",
-      "nat": "ES"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Donald",
-        "last": "Young"
-      },
-      "email": "donald.young@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Donald",
-      "nat": "US"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Iegor",
-        "last": "Holodovskiy"
-      },
-      "email": "iegor.holodovskiy@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Iegor",
-      "nat": "UA"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Madame",
-        "first": "Jessica",
-        "last": "David"
-      },
-      "email": "jessica.david@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Jessica",
-      "nat": "CH"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Eve",
-        "last": "Martinez"
-      },
-      "email": "eve.martinez@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Eve",
-      "nat": "FR"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Caleb",
-        "last": "Silva"
-      },
-      "email": "caleb.silva@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Caleb",
-      "nat": "US"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Miss",
-        "first": "Marcia",
-        "last": "Jenkins"
-      },
-      "email": "marcia.jenkins@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Marcia",
-      "nat": "US"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Mrs",
-        "first": "Mackenzie",
-        "last": "Jones"
-      },
-      "email": "mackenzie.jones@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Mackenzie",
-      "nat": "NZ"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Jeremiah",
-        "last": "Gutierrez"
-      },
-      "email": "jeremiah.gutierrez@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Jeremiah",
-      "nat": "AU"
-    },
-    {
-      "gender": "female",
-      "name": {
-        "title": "Ms",
-        "first": "Luciara",
-        "last": "Souza"
-      },
-      "email": "luciara.souza@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Luciara",
-      "nat": "BR"
-    },
-    {
-      "gender": "male",
-      "name": {
-        "title": "Mr",
-        "first": "Valgi",
-        "last": "da Cunha"
-      },
-      "email": "valgi.dacunha@example.com",
-      "picture": "https://api.dicebear.com/6.x/open-peeps/svg?seed=Valgi",
-      "nat": "BR"
-    }
-  ]
+type DenseApplicationTableProps = {
+  applications: Application[];
+  api: MTAApi;
 }
 
-const useStyles = makeStyles({
-  avatar: {
-    height: 32,
-    width: 32,
-    borderRadius: '50%',
-  },
-});
-
-type User = {
-  gender: string; // "male"
-  name: {
-    title: string; // "Mr",
-    first: string; // "Duane",
-    last: string; // "Reed"
-  };
-  email: string; // "duane.reed@example.com"
-  picture: string; // "https://api.dicebear.com/6.x/open-peeps/svg?seed=Duane"
-  nat: string; // "AU"
-};
-
-type DenseTableProps = {
-  users: User[];
-};
-
-export const DenseTable = ({ users }: DenseTableProps) => {
-  const classes = useStyles();
-
+export const DenseApplicationTable = ({ applications, api }: DenseApplicationTableProps) => {
   const columns: TableColumn[] = [
-    { title: 'Avatar', field: 'avatar' },
-    { title: 'Name', field: 'name' },
-    { title: 'Email', field: 'email' },
-    { title: 'Nationality', field: 'nationality' },
+    { title: 'Name', field: 'name'},
+    { title: 'Description', field: 'description' },
+    { title: 'Assessed', field: 'assessed'},
+    { title: 'mtaID', field: 'mtaID', hidden: true}
   ];
 
-  const data = users.map(user => {
+  const data = applications.map(application => {
     return {
-      avatar: (
-        <img
-          src={user.picture}
-          className={classes.avatar}
-          alt={user.name.first}
-        />
-      ),
-      name: `${user.name.first} ${user.name.last}`,
-      email: user.email,
-      nationality: user.nat,
-    };
-  });
+      name: application.name,
+      description: application.description,
+      assessed: application.assessed,
+      mtaID: application.id,
+    }
+  })
 
   return (
-    <Table
-      title="Example User List"
-      options={{ search: false, paging: false }}
-      columns={columns}
-      data={data}
-    />
-  );
-};
+    // add Info cards here, that explain to attach an application to the enity.
+    <>
+      <InfoCard title="Link your Application to Component">
+      <Table
+        title="Application List"
+        options={{ search: false, paging: true }}
+        columns={columns}
+        data={data}
+        actions={[{
+          icon: () => (
+            <>
+              <AddLinkIcon />
+            </>
+          ),
+          tooltip: 'Connect Application to MTA Application',
+          onClick: (event, rowData) => {
+            console.log(api.getExample())
+          }
+        }]} />
+      </InfoCard>
+        </>
+  )
+}
+
+
+type loginPageProps = {
+  url: URL;
+}
+
+export const LoginToMTACard = ({ url }: loginPageProps) => {
+  return <Grid item>
+          <InfoCard title="Please Login">
+            <Button target='_blank' variant='outlined' color='primary' size='large' href={url.toString()}>Login To MTA</Button>
+          </InfoCard>
+        </Grid>
+
+}
 
 export const ExampleFetchComponent = () => {
+  const api = useApi(mtaApiRef);
 
-  const { value, loading, error } = useAsync(async (): Promise<User[]> => {
+  const { value, loading, error } = useAsync(async (): Promise<Application[] | URL> => {
     // Would use fetch in a real world example
-    return exampleUsers.results;
+    const applications = (await api.getApplications())
+    if (applications instanceof URL) {
+      // HEre we need to redirect them to loging MTA.
+      console.log("we have a url");
+      return applications
+    }
+    
+    return applications.map(application => {
+      return {
+        id: application.id,
+        name: application.name,
+        description: application.description,
+        assessed: application.assessed,
+      }
+    })
   }, []);
 
   if (loading) {
     return <Progress />;
+  }  else if (value instanceof URL) {
+    return <LoginToMTACard url={value}/>
   } else if (error) {
+    console.log(error.stack)
     return <ResponseErrorPanel error={error} />;
   }
 
-  return <DenseTable users={value || []} />;
+
+  return <DenseApplicationTable applications={value || [] } api={api}/>;
 };

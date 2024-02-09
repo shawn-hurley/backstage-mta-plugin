@@ -81,6 +81,12 @@ export class OAuthBackstageIDMappingStorage implements OAuthBackstageIDMapping{
             return undefined;
         }   
 
-        return this.knex.table(OAUTH_MAPPING_TABLE).where({backstageID: backstageID}).first()
+        const v: string = await this.knex.table(OAUTH_MAPPING_TABLE).where({backstageID: backstageID}).first().then((data) => {
+            if (!data) {
+                return undefined
+            }
+            return data.mtaOAuthRefreshToken
+        })
+        return v
     }
 }

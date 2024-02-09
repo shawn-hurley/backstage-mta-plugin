@@ -1,1 +1,1 @@
-export { mtaPlugin, MtaPage } from './plugin';
+export { mtaPlugin, EntityMTAContent } from './plugin';

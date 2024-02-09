@@ -1,11 +1,11 @@
 import React from 'react';
 import { createDevApp } from '@backstage/dev-utils';
-import { mtaPlugin, MtaPage } from '../src/plugin';
+import { mtaPlugin, EntityMTAContent} from '../src/plugin';
 
 createDevApp()
   .registerPlugin(mtaPlugin)
   .addPage({
-    element: <MtaPage />,
+    element: <EntityMTAContent/>,
     title: 'Root Page',
     path: '/mta'
   })

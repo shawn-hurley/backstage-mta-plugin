@@ -69,13 +69,14 @@ export async function createRouter(
     }
 
     const backstageID = await identity.getIdentity( { request })
-    let id: string = "undefined"
-    if (backstageID) {
-      logger.info("id found, setting auth for the backstage user")
-      id = backstageID.identity.userEntityRef
-    }
+    let id: string = backstageID?.identity.userEntityRef ?? "undefined"
+    // if (backstageID) {
+    //   logger.info("id found, setting auth for the backstage user")
+    //   id = backstageID.identity.userEntityRef
+    // }
     let accessToken = await cacheClient.get(String(id))
     const refreshToken = await oauthMappingStorage.getRefreshTokenForUser(String(id))
+    logger.info("refreshToken: " + refreshToken)
     
     if (!accessToken && !refreshToken) {
       const authorizationURL = authClient.authorizationUrl({
@@ -84,7 +85,8 @@ export async function createRouter(
         code_challenge_method: 'S256',
       })
       logger.info("login_url: " + authorizationURL)
-      response.redirect(301, authorizationURL)
+      response.statusCode = 401;
+      response.json({"loginURL": authorizationURL})
       return
     }
     if (!accessToken && refreshToken) {
@@ -96,13 +98,20 @@ export async function createRouter(
           code_challenge_method: 'S256',
         })
         logger.info("login_url: " + authorizationURL)
-        response.redirect(301, authorizationURL)
+      response.statusCode = 401;
+      response.json({"loginURL": authorizationURL})
         return
       }
+      logger.info("refreshed token")
       accessToken = String(tokenSet.access_token)
-      cacheClient.set(String(id), String(tokenSet.access_token))
+      cacheClient.set(String(id), String(tokenSet.access_token), {ttl: tokenSet.expires_in?? 60 * 1000})
+      if (tokenSet.refresh_token != refreshToken) {
+        //if updated, then we should update the database
+        logger.info("TODO: UPDATE REFRESH TOKEN")
+      }
     }
-
+    
+    
     response.locals.accessToken = accessToken
     next();
   })
@@ -130,9 +139,10 @@ export async function createRouter(
     }
 
     // Add timeout
-    cacheClient.set(user, tokenSet.access_token)
+    logger.info("got expires in: " +tokenSet.expires_in)
+    // Default expire to 1min
+    cacheClient.set(user, tokenSet.access_token, {ttl: tokenSet.expires_in ?? 60 * 1000})
     const out = oauthMappingStorage.saveRefreshTokenForUser(user, tokenSet.refresh_token)
-    logger.info("out: " + out)
 
     // Eventually this should redirect back the enitity page
     response.json({})
@@ -199,6 +209,8 @@ export async function createRouter(
     const j = await (await getResponse).json()
     response.json(j)
   })
+
+  
 
 
   router.use(errorHandler());
