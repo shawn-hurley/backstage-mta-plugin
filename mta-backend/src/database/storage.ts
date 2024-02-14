@@ -8,7 +8,10 @@ const migrationsDir = resolvePackagePath('@internal/plugin-mta-backend', 'migrat
 
 
 export interface EntityApplicationStorage {
-    getApplicationIDForEntity(entityUID: string): Promise<string | undefined>
+    getApplicationIDForEntity(entityUID: string): Promise<Number| undefined>
+    saveApplicationIDForEntity(entityID: string, applicatonID: string): Promise<Boolean| void>
+    saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<Boolean| undefined>
+    getRefreshTokenForUser(backstageID: string): Promise<String | undefined>
 }
 
 export class DataBaseEntityApplicationStoraage implements EntityApplicationStorage {
@@ -29,44 +32,34 @@ export class DataBaseEntityApplicationStoraage implements EntityApplicationStora
         return new DataBaseEntityApplicationStoraage(knex, logger)
       }
 
-    async getApplicationIDForEntity(entityUID: string): Promise<string | undefined> {
+    async getApplicationIDForEntity(entityUID: string): Promise<Number| undefined> {
         if (!entityUID) {
             return undefined;
         }
-        const daoRaws = await this.knex.table(ENTITY_APPLICATION_TABLE).where(builder => {
-            builder.where('entityUID', entityUID)
-        }).first()
-
-        if (!daoRaws) {
-            return undefined;
-        }
-        const applicationID: string = daoRaws;
-        return applicationID
+        const v: number= await this.knex.table(ENTITY_APPLICATION_TABLE).where({entityUID: entityUID}).first().then((data) => {
+            if (!data) {
+                return undefined
+            }
+            console.log(data.mtaApplication)
+            return data.mtaApplication
+        })
+        return v
     }
-}
 
-export interface OAuthBackstageIDMapping {
-    // String of success or not??? 
-    saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<Boolean| undefined>
-    getRefreshTokenForUser(backstageID: string): Promise<String | undefined>
-}
-export class OAuthBackstageIDMappingStorage implements OAuthBackstageIDMapping{
-    public constructor(
-        private readonly knex: Knex<any, any[]>,
-        private readonly logger: Logger
-    ) {}
-
-    static async create(
-        knex: Knex<any, any[]>,
-        logger: Logger,
-      ): Promise<OAuthBackstageIDMapping> {
-        logger.info("Starting to migrate database")
-        await knex.migrate.latest({
-            directory: migrationsDir,
-        });
-
-        return new OAuthBackstageIDMappingStorage(knex, logger)
-      }
+    async saveApplicationIDForEntity(entityID: string, applicatonID: string): Promise<Boolean| void> {
+        this.logger.info("saving in storage: " + entityID + " "+ applicatonID)
+        if (!entityID || !applicatonID) {
+            return undefined
+        }
+        const res = this.knex.insert({"entityUID": entityID, "mtaApplication": applicatonID}).into(ENTITY_APPLICATION_TABLE)
+            .then((data) => {
+                if (data.length === 1) {
+                    return true
+                }
+                return false;
+            })
+        return res
+    }
 
     async saveRefreshTokenForUser(backstageID: string, refreshToken: string): Promise<Boolean| undefined> {
         if (!backstageID || !refreshToken) {

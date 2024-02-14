@@ -20,12 +20,14 @@
     "test": "backstage-cli package test",
     "clean": "backstage-cli package clean",
     "prepack": "backstage-cli package prepack",
-    "postpack": "backstage-cli package postpack"
+    "postpack": "backstage-cli package postpack",
+    "export-dynamic": "janus-cli package export-dynamic-plugin"
   },
   "dependencies": {
     "@backstage/backend-common": "^0.20.1",
     "@backstage/config": "^1.1.1",
     "@janus-idp/backend-plugin-manager": "^0.0.2-janus.5",
+    "@backstage/backend-dynamic-feature-service": "0.1.0",
     "@types/express": "*",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",
@@ -35,12 +37,16 @@
     "yn": "^4.0.0"
   },
   "devDependencies": {
+    "@janus-idp/cli": "^1.4.7",
     "@backstage/cli": "^0.25.1",
     "@types/supertest": "^2.0.12",
     "msw": "^1.0.0",
     "supertest": "^6.2.4"
   },
   "files": [
-    "dist"
+    "dist",
+    "dist-dynamic/*.*",
+    "dist-dynamic/dist/**",
+    "dist-dynamic/alpha/*"
   ]
 }

@@ -6,13 +6,15 @@ import useAsync from 'react-use/lib/useAsync';
 import { useApi } from '@backstage/core-plugin-api';
 import {mtaApiRef, Application, MTAApi} from '../../api/api.ts';
 import AddLinkIcon from '@mui/icons-material/AddLink';
+import { useEntity } from '@backstage/plugin-catalog-react';
 
 type DenseApplicationTableProps = {
   applications: Application[];
   api: MTAApi;
+  entityID: string;
 }
 
-export const DenseApplicationTable = ({ applications, api }: DenseApplicationTableProps) => {
+export const DenseApplicationTable = ({ applications, api, entityID }: DenseApplicationTableProps) => {
   const columns: TableColumn[] = [
     { title: 'Name', field: 'name'},
     { title: 'Description', field: 'description' },
@@ -46,7 +48,14 @@ export const DenseApplicationTable = ({ applications, api }: DenseApplicationTab
           ),
           tooltip: 'Connect Application to MTA Application',
           onClick: (event, rowData) => {
-            console.log(api.getExample())
+            console.log(rowData)
+            console.log(event)
+            if (Array.isArray(rowData)) {
+              console.log("unable to handle array of row data")
+            } else {
+              const {mtaID} = rowData
+              const res = api.saveApplicationEntity(mtaID, entityID);
+            }
           }
         }]} />
       </InfoCard>
@@ -70,6 +79,12 @@ export const LoginToMTACard = ({ url }: loginPageProps) => {
 
 export const ExampleFetchComponent = () => {
   const api = useApi(mtaApiRef);
+  const entity = useEntity();
+  if (!entity) {
+    // TODO: this is probably bad
+    return <Progress />
+  }
+  const entityID = entity.entity.metadata.uid ?? ""
 
   const { value, loading, error } = useAsync(async (): Promise<Application[] | URL> => {
     // Would use fetch in a real world example
@@ -100,5 +115,5 @@ export const ExampleFetchComponent = () => {
   }
 
 
-  return <DenseApplicationTable applications={value || [] } api={api}/>;
+  return <DenseApplicationTable applications={value || [] } api={api} entityID={entityID}/>;
 };

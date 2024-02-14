@@ -1,6 +1,7 @@
 import { DiscoveryApi, IdentityApi, createApiRef } from "@backstage/core-plugin-api";
 
 
+
 export type Tags = {
     name: string;
     source: SourceBuffer;
@@ -23,6 +24,8 @@ export type Application = {
 }
 export interface MTAApi {
     getApplications(): Promise<Application[] | URL>
+    getApplication(): Promise<Application | URL>
+    saveApplicationEntity(applicationID: string, entityID): Promise<Application | URL>
     getExample(): { example: string };
 
 }
@@ -63,6 +66,78 @@ export class DefaultMtaApi implements MTAApi {
         if (!response.ok) {
             const payload = await response.text()
             const message = `Request failed with ${response.status} ${response.statusText}, ${payload}`;
+            throw new Error(message);
+        }
+
+        return j
+    }
+    async getApplication(): Promise<Application | URL > {
+        const entity = useEntity();
+
+        const url = await this.discoveryApi.getBaseUrl('mta')
+        const {token: idToken } = await this.identityApi.getCredentials();
+        const ref = window.location.href
+        
+
+        const response = await fetch(url+"/application/entity/"+entity.entity.metadata.uid, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(idToken && { Authorization: `Bearer ${idToken}` }),
+
+            },
+            //referrer: window.location.href,
+            referrerPolicy: 'no-referrer-when-downgrade',
+            redirect: 'error',
+        });
+        console.log(response.status)
+        const j =  await response.json()
+        if (response.status === 401) {
+            // Create login pop-up
+            console.log(j.loginURL)
+            return new URL(j.loginURL)
+        }
+
+        if (!response.ok) {
+            const payload = await response.text()
+            const message = `Request failed with ${response.status} ${response.statusText}, ${payload}`;
+            throw new Error(message);
+        }
+
+        return j
+    }
+
+    async saveApplicationEntity(applicationID: string, entityID: string): Promise<Application | URL> {
+        console.log("here in save with application: " + applicationID)
+
+        const url = await this.discoveryApi.getBaseUrl('mta')
+        const {token: idToken } = await this.identityApi.getCredentials();
+        const ref = window.location.href
+        console.log("here in save with entity" + entityID + " application: " + applicationID)
+        
+
+        const response = await fetch(url+"/application/entity", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(idToken && { Authorization: `Bearer ${idToken}` }),
+
+            },
+            body: JSON.stringify({"applicationID": applicationID, "entityID": entityID}),
+            //referrer: window.location.href,
+            referrerPolicy: 'no-referrer-when-downgrade',
+            redirect: 'error',
+        });
+        console.log(response.status)
+        const j =  await response.json()
+        if (response.status === 401) {
+            // Create login pop-up
+            console.log(j.loginURL)
+            return new URL(j.loginURL)
+        }
+
+        if (!response.ok) {
+            const message = `Request failed with ${response.status} ${response.statusText}, ${j}`;
             throw new Error(message);
         }
 

@@ -5,7 +5,7 @@ import { Config } from '@backstage/config';
 import { IdentityApi } from '@backstage/plugin-auth-node';
 import { Logger } from 'winston';
 import { Issuer } from 'openid-client';
-import { DataBaseEntityApplicationStoraage, EntityApplicationStorage, OAuthBackstageIDMappingStorage } from '../database/storage';
+import { DataBaseEntityApplicationStoraage} from '../database/storage';
 import { generators } from 'openid-client';
 
 
@@ -24,7 +24,6 @@ export async function createRouter(
 
   const dbClient = await database.getClient();
   const entityApplicationStorage  = await DataBaseEntityApplicationStoraage.create(dbClient, logger)
-  const oauthMappingStorage = await OAuthBackstageIDMappingStorage.create(dbClient, logger)
 
   // Use the cache for short lived access token
   // Use database mapping for refreshToken
@@ -80,7 +79,7 @@ export async function createRouter(
     logger.info("here" + u.toString())
     
     let accessToken = await cacheClient.get(String(id))
-    const refreshToken = await oauthMappingStorage.getRefreshTokenForUser(String(id))
+    const refreshToken = await entityApplicationStorage.getRefreshTokenForUser(String(id))
     
     if (!accessToken && !refreshToken) {
       const authorizationURL = authClient.authorizationUrl({
@@ -109,7 +108,7 @@ export async function createRouter(
       cacheClient.set(String(id), String(tokenSet.access_token), {ttl: tokenSet.expires_in?? 60 * 1000})
       if (tokenSet.refresh_token && tokenSet.refresh_token != refreshToken) {
         //if updated, then we should update the database
-        oauthMappingStorage.saveRefreshTokenForUser(String(id), tokenSet.refresh_token)
+        entityApplicationStorage.saveRefreshTokenForUser(String(id), tokenSet.refresh_token)
       }
     }
     
@@ -147,7 +146,7 @@ export async function createRouter(
 
     // Default expire to 1min
     cacheClient.set(user, tokenSet.access_token, {ttl: tokenSet.expires_in ?? 60 * 1000})
-    const out = oauthMappingStorage.saveRefreshTokenForUser(user, tokenSet.refresh_token)
+    const out = entityApplicationStorage.saveRefreshTokenForUser(user, tokenSet.refresh_token)
     response.redirect(continueTo?.toString() ?? fronteEndBaseURL)
     return
 
@@ -173,8 +172,17 @@ export async function createRouter(
     response.json(j)
   })
 
-  router.get('/applications/:id', async(request, response) => {
-    const getResponse = fetch(baseURLHub+"/applications/"+request.params.id, {
+  router.get('/application/entity/:id', async(request, response) => {
+    const applicatonID = await entityApplicationStorage.getApplicationIDForEntity(request.params.id)
+    if (!applicatonID) {
+      response.status(404)
+      response.json({"message": "no application mapped"})
+      return
+    }
+
+    logger.info("found application: " + applicatonID)
+    
+    const getResponse = fetch(baseURLHub+"/applications/"+applicatonID, {
       "credentials": "include",
       "headers": {
         "Accept": "application/json, text/plain, */*",
@@ -191,7 +199,22 @@ export async function createRouter(
     }
     const j = await (await getResponse).json()
     response.json(j)
+  })
 
+  router.post('/application/entity', async(request, response) => {
+    const {entityID, applicationID}= request.body
+    logger.info("attempting to save: " + entityID + " "+ applicationID)
+    const res = await entityApplicationStorage.saveApplicationIDForEntity(entityID, applicationID)
+    logger.info("attempting to save: " + entityID + " "+ applicationID+ " result" + res)
+    if (!res) {
+      response.status(500)
+      response.json({})
+      return
+    }
+
+    response.status(201)
+    response.json({"entityID": entityID, "applicationID": applicationID})
+    return
   })
 
   router.get('/issues/:id', async(request, response) => {

@@ -11,7 +11,7 @@ exports.up = async function up(knex) {
     });
     await knex.schema.createTable('entity-application-mapping', table => {
       table.string('entityUID').primary();
-      table.string('mtaApplication');
+      table.integer('mtaApplication');
     })
   };
   
@@ -23,5 +23,5 @@ exports.up = async function up(knex) {
    */
   exports.down = async function down(knex) {
     await knex.schema.dropTable('oauth-mapping');
-    await knex.schema.dropTable('mtaApplication');
+    await knex.schema.dropTable('entity-application-mapping');
   };
