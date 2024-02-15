@@ -1,7 +1,6 @@
 import { DiscoveryApi, IdentityApi, createApiRef } from "@backstage/core-plugin-api";
 
 
-
 export type Tags = {
     name: string;
     source: SourceBuffer;
@@ -24,7 +23,7 @@ export type Application = {
 }
 export interface MTAApi {
     getApplications(): Promise<Application[] | URL>
-    getApplication(): Promise<Application | URL>
+    getApplication(entityID: string): Promise<Application | undefined | URL>
     saveApplicationEntity(applicationID: string, entityID): Promise<Application | URL>
     getExample(): { example: string };
 
@@ -71,15 +70,14 @@ export class DefaultMtaApi implements MTAApi {
 
         return j
     }
-    async getApplication(): Promise<Application | URL > {
-        const entity = useEntity();
+    async getApplication(entityID: String): Promise<Application | undefined | URL > {
 
         const url = await this.discoveryApi.getBaseUrl('mta')
         const {token: idToken } = await this.identityApi.getCredentials();
         const ref = window.location.href
         
 
-        const response = await fetch(url+"/application/entity/"+entity.entity.metadata.uid, {
+        const response = await fetch(url+"/application/entity/"+entityID, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -96,6 +94,9 @@ export class DefaultMtaApi implements MTAApi {
             // Create login pop-up
             console.log(j.loginURL)
             return new URL(j.loginURL)
+        }
+        if (response.status == 404) {
+            return undefined;
         }
 
         if (!response.ok) {

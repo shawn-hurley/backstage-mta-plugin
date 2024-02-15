@@ -77,6 +77,17 @@ export const LoginToMTACard = ({ url }: loginPageProps) => {
 
 }
 
+type ApplicationCardProps = {
+  application: Application
+}
+export const ApplicationCard = ({ application }: ApplicationCardProps) => {
+
+  return <Grid item>
+    <InfoCard title={application.name}></InfoCard>
+  </Grid>
+
+}
+
 export const ExampleFetchComponent = () => {
   const api = useApi(mtaApiRef);
   const entity = useEntity();
@@ -86,7 +97,17 @@ export const ExampleFetchComponent = () => {
   }
   const entityID = entity.entity.metadata.uid ?? ""
 
-  const { value, loading, error } = useAsync(async (): Promise<Application[] | URL> => {
+  const { value, loading, error } = useAsync(async (): Promise<Application[] | URL | Application> => {
+    const application = (await api.getApplication(entityID))
+    if (application) {
+      if (application instanceof URL) {
+        // HEre we need to redirect them to loging MTA.
+        console.log("we have a url");
+        return application;
+      }
+      return application;
+    }
+
     // Would use fetch in a real world example
     const applications = (await api.getApplications())
     if (applications instanceof URL) {
@@ -107,13 +128,21 @@ export const ExampleFetchComponent = () => {
 
   if (loading) {
     return <Progress />;
-  }  else if (value instanceof URL) {
-    return <LoginToMTACard url={value}/>
   } else if (error) {
     console.log(error.stack)
     return <ResponseErrorPanel error={error} />;
+  } else if(!value) {
+    const e = Error("fix me");
+    return <ResponseErrorPanel title="unable to contact MTA" error={e} />;
+  }
+  
+  if (value instanceof URL) {
+    return <LoginToMTACard url={value}/>
   }
 
+  if (Array.isArray(value)) {
+    return <DenseApplicationTable applications={value || [] } api={api} entityID={entityID}/>;
+  }
 
-  return <DenseApplicationTable applications={value || [] } api={api} entityID={entityID}/>;
+  return <ApplicationCard application={value} />
 };
