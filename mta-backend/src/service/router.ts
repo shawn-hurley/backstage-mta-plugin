@@ -4,9 +4,8 @@ import { PluginCacheManager, PluginDatabaseManager } from '@backstage/backend-co
 import { Config } from '@backstage/config';
 import { IdentityApi } from '@backstage/plugin-auth-node';
 import { Logger } from 'winston';
-import { Issuer } from 'openid-client';
+import { Issuer, generators } from 'openid-client';
 import { DataBaseEntityApplicationStoraage} from '../database/storage';
-import { generators } from 'openid-client';
 
 
 export interface RouterOptions {

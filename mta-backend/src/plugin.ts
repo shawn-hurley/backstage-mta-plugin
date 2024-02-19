@@ -2,8 +2,11 @@
 import {
     coreServices,
     createBackendPlugin,
+    createBackendModule
   } from '@backstage/backend-plugin-api';
 import { createRouter } from './service/router';
+import { MTAProvider } from '../../catalog-backend-module-mta/src/provider/MTAEntityProvider'
+import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import { cacheToPluginCacheManager, loggerToWinstonLogger } from '@backstage/backend-common';
   
 export const mtaPlugin = createBackendPlugin({
