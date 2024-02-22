@@ -112,6 +112,8 @@ export class MTAProvider implements EntityProvider {
     await this.connection.applyMutation({
       type: 'full',
       entities: j.map(application => {
+        const re = "/ /gi"
+        const name  = application.name.split(' ').join('-')
         return {
           locationKey: this.getProviderName(),
           entity: {
@@ -122,7 +124,7 @@ export class MTAProvider implements EntityProvider {
                 "backstage.io/managed-by-location": "url:"+baseURLHub+"/application/"+application.id,
                 "backstage.io/managed-by-origin-location": "url:"+baseURLHub+"/application/"+application.id,
               },
-              name: application.name,
+              name: name,
               namespace: 'default',
             },
             spec: {
