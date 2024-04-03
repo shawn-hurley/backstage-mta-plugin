@@ -24,10 +24,10 @@
     "export-dynamic": "janus-cli package export-dynamic-plugin"
   },
   "dependencies": {
-    "@backstage/backend-common": "^0.20.1",
-    "@backstage/config": "^1.1.1",
+    "@backstage/backend-common": "^0.21.6",
+    "@backstage/config": "^1.2.0",
     "@janus-idp/backend-plugin-manager": "^0.0.2-janus.5",
-    "@backstage/backend-dynamic-feature-service": "0.1.0",
+    "@backstage/backend-dynamic-feature-service": "^0.2.7",
     "@types/express": "*",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@janus-idp/cli": "^1.4.7",
-    "@backstage/cli": "^0.25.1",
+    "@backstage/cli": "^0.26.2",
     "@types/supertest": "^2.0.12",
     "msw": "^1.0.0",
     "supertest": "^6.2.4"

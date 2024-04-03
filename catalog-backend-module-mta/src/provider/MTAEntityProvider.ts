@@ -98,7 +98,7 @@ export class MTAProvider implements EntityProvider {
     })
 
     if (getResponse.status != 200) {
-      this.logger.info("unable to call hub " + status + " message " + JSON.stringify(getResponse.text()))
+      this.logger.info("unable to call hub " + getResponse.status + " message " + JSON.stringify(getResponse.text()))
       return
     }
     const j = await getResponse.json()
